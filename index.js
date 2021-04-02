@@ -14,7 +14,7 @@ bot.on("message", async (ctx) =>
 			{
 				let replyed_message_text = ctx.message.reply_to_message.text;
 				let splited_message_text = replyed_message_text.split("\n");
-				bot.telegram.sendMessage(splited_message_text[0], ctx.message.text).catch();
+				bot.telegram.sendMessage(splited_message_text[0], ctx.message.text).catch(err => ctx.reply(err.response.description));
 			}
 			else
 			{
