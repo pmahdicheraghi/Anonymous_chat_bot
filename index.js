@@ -1,64 +1,61 @@
-import { Telegraf } from 'telegraf';
+import { Telegraf, Markup } from 'telegraf';
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
+let id_array = new Array;
+
 bot.start((ctx) => ctx.reply("Let's start talking!"));
 
-bot.on("message", async (ctx) => 
-{
-	if (ctx.from.id == process.env.ADMIN_ID) 
+bot.help((ctx) => {
+	if (ctx.from.id == process.env.ADMIN_ID)
+	{
+		ctx.reply("To answer the messages, just reply the ID!");
+	}
+	else
+	{
+		ctx.reply("Send me a message! 😈");
+	}
+});
+
+bot.on("message", async (ctx) => {
+	if (ctx.from.id == process.env.ADMIN_ID)
 	{
 		if (ctx.message.reply_to_message)
 		{
-			if(ctx.message.reply_to_message.text)
+			if (ctx.message.reply_to_message.reply_markup)
 			{
-				let replyed_message_text = ctx.message.reply_to_message.text;
-				let splited_message_text = replyed_message_text.split("\n");
-				
-				bot.telegram.copyMessage(splited_message_text[0], process.env.ADMIN_ID, ctx.message.message_id)
-				.catch(err => ctx.reply(err.response.description));
+				let replyed_message_id = ctx.message.reply_to_message.reply_markup.inline_keyboard[0][0].callback_data;
+				let splited_message_id = replyed_message_id.split("/");
+				bot.telegram.copyMessage(splited_message_id[0], process.env.ADMIN_ID, ctx.message.message_id,
+					Markup.inlineKeyboard([Markup.button.callback("@" + ctx.from.username, ctx.from.id + "/" + ctx.message.message_id, true)]),
+					).catch(err => ctx.reply(err.response.description));
 			}
 			else
 			{
 				bot.telegram.sendMessage(process.env.ADMIN_ID, "NO ID found!");
 			}
 		}
+		else
+		{
+			bot.telegram.sendMessage(process.env.ADMIN_ID, "Reply some message!");
+		}
 	}
-	else 
+	else
 	{
-		if (ctx.message.sticker) 
+		if (ctx.message.reply_to_message && ctx.message.reply_to_message.reply_markup)
 		{
-			bot.telegram.sendMessage(process.env.ADMIN_ID, ctx.from.id + "\n@" + ctx.from.username);
-			bot.telegram.sendSticker(process.env.ADMIN_ID, ctx.message.sticker.file_id);
+			let replyed_message_id = ctx.message.reply_to_message.reply_markup.inline_keyboard[0][0].callback_data;
+			let splited_message_id = replyed_message_id.split("/");
+			console.log(splited_message_id[1]);
+			bot.telegram.copyMessage(process.env.ADMIN_ID, ctx.from.id, ctx.message.message_id, { reply_to_message_id: splited_message_id[1],
+				...Markup.inlineKeyboard([Markup.button.callback(' ', ctx.from.id + "/" + ctx.message.message_id, false)])
+			}).catch(err => ctx.reply(err.response.description));
 		}
-		else if (ctx.message.animation) 
+		else
 		{
-			bot.telegram.sendMessage(process.env.ADMIN_ID, ctx.from.id + "\n@" + ctx.from.username);
-			bot.telegram.sendAnimation(process.env.ADMIN_ID, ctx.message.animation.file_id);
-		}
-		else if (ctx.message.photo)
-		{
-			bot.telegram.sendMessage(process.env.ADMIN_ID, ctx.from.id + "\n@" + ctx.from.username);
-			bot.telegram.sendPhoto(process.env.ADMIN_ID, ctx.message.photo.file_id);
-		}
-		else if (ctx.message.video)
-		{
-			bot.telegram.sendMessage(process.env.ADMIN_ID, ctx.from.id + "\n@" + ctx.from.username);
-			bot.telegram.sendVideo(process.env.ADMIN_ID, ctx.message.video.file_id);
-		}
-		else if (ctx.message.audio)
-		{
-			bot.telegram.sendMessage(process.env.ADMIN_ID, ctx.from.id + "\n@" + ctx.from.username);
-			bot.telegram.sendAudio(process.env.ADMIN_ID, ctx.message.audio.file_id);
-		}
-		else if (ctx.message.voice)
-		{
-			bot.telegram.sendMessage(process.env.ADMIN_ID, ctx.from.id + "\n@" + ctx.from.username);
-			bot.telegram.sendVoice(process.env.ADMIN_ID, ctx.message.voice.file_id);
-		}
-		else 
-		{
-			bot.telegram.sendMessage(process.env.ADMIN_ID, ctx.from.id + "\n@" + ctx.from.username + "\n" + ctx.message.text);
+			bot.telegram.copyMessage(process.env.ADMIN_ID, ctx.from.id, ctx.message.message_id,
+				Markup.inlineKeyboard([Markup.button.callback(' ', ctx.from.id + "/" + ctx.message.message_id, false)]))
+				.catch(err => ctx.reply(err.response.description));
 		}
 	}
 });
